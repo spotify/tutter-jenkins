@@ -1,48 +1,53 @@
 class Jenkins
   def initialize(settings, client, project, data)
-    @settings = settings
+    @settings = settings || {}
     @client = client
     @project = project
     @data = data
+    @merge_request_comment = @settings['merge_request_comment']
+    @merge_request_comment ||= 'merge, my change is covered by tests'
   end
 
   def run
     pull_request_id = @data['issue']['number']
     puts "pull request id: #{pull_request_id}"
+
+    comments = @client.issue_comments(@project, pull_request_id)
+    last_comment = comments.last
+
+    asked_to_merge = last_comment && last_comment.body.strip.downcase == @merge_request_comment.strip.downcase
+    unless asked_to_merge
+      puts "not asked to merge"
+      return false
+    end
+
     pr = @client.pull_request @project, pull_request_id
-
     if pr.mergeable_state != 'clean'
-      puts "merge state for #{@project} #{pull_request_id} is not clean. Current state: #{pr.mergeable_state}"
+      @client.add_comment(@project, pull_request_id, "Please rebase your change, merge state is #{pr.mergeable_state}")
       return false
     end
 
-    # No comments, no need to go further.
-    if pr.comments == 0
-      puts 'no comments, skipping'
-      return false
-    end
-
-    # Don't care about code we can't merge
     unless pr.mergeable
-      puts 'not mergeable, skipping'
+      @client.add_comment(@project, pull_request_id, "Please rebase your change, pull request is not mergeable")
       return false
     end
 
-    # We fetch the latest commit and it's date.
     last_commit = @client.pull_request_commits(@project, pull_request_id).last
     last_commit_date = last_commit.commit.committer.date
 
-    comments = @client.issue_comments(@project, pull_request_id)
+    if last_comment.created_at < last_commit_date
+      @client.add_comment(@project, pull_request_id, "Please reopen pull request, found a new commit")
+      return false
+    end
+
     jenkins_last_comment = @client.issue_comments(@project, pull_request_id).select{|c| c.attrs[:user].attrs[:login] == 'jenkins'}.last
     jenkins_allows_merge = jenkins_last_comment && jenkins_last_comment.body =~ /PASS/
 
     if jenkins_allows_merge
-      puts "the last comment from jenkins allows the merge"
-      last_comment = comments.last
-      if last_comment.created_at > last_commit_date && last_comment.body.strip.downcase == 'merge, my change is covered by tests'
-        puts "merging #{pull_request_id} #{@project}"
-        @client.merge_pull_request(@project, pull_request_id, 'ok, shipping!')
-      end
+      puts "merging #{pull_request_id} #{@project}"
+      @client.merge_pull_request(@project, pull_request_id, 'ok, shipping!')
+    else
+      @client.add_comment(@project, pull_request_id, "Please make sure tests pass")
     end
   end
 end
