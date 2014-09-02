@@ -1,10 +1,10 @@
 # -*- encoding: utf-8 -*-
 Gem::Specification.new do |s|
   s.name        = 'tutter-jenkins'
-  s.version     = '0.0.2'
+  s.version     = '0.0.3'
   s.author      = 'Alexey Lapitsky'
   s.email       = ['alexey@spotify.com']
-  s.homepage    = 'https://ghe.spotify.net/io/tutter-jenkins'
+  s.homepage    = 'https://github.com/spotify/tutter-jenkins'
   s.summary     = 'Merges pull requests if tests PASS'
   s.description = 'This tutter action let non collaborators review and merge code without having more then read access to the project'
   s.license     = 'Apache 2.0'
