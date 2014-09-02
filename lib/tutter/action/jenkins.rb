@@ -22,10 +22,6 @@ class Jenkins
     end
 
     pr = @client.pull_request @project, pull_request_id
-    if pr.mergeable_state != 'clean'
-      @client.add_comment(@project, pull_request_id, "Please rebase your change, merge state is #{pr.mergeable_state}")
-      return false
-    end
 
     unless pr.mergeable
       @client.add_comment(@project, pull_request_id, "Please rebase your change, pull request is not mergeable")
