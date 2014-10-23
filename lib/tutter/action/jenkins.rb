@@ -12,6 +12,11 @@ class Jenkins
     pull_request_id = @data['issue']['number']
     puts "pull request id: #{pull_request_id}"
 
+    if @data['issue']['state'] != 'open'
+      puts "The issue state is #{@data['issue']['state']}"
+      return false
+    end
+
     comments = @client.issue_comments(@project, pull_request_id)
     last_comment = comments.last
 
