@@ -41,7 +41,7 @@ class Jenkins
       return false
     end
 
-    jenkins_last_comment = @client.issue_comments(@project, pull_request_id).select{|c| c.attrs[:user].attrs[:login] == 'jenkins'}.last
+    jenkins_last_comment = @client.issue_comments(@project, pull_request_id).select{|c| c.attrs[:user].attrs[:login] == 'dnsjenkins-bot'}.last
     jenkins_allows_merge = jenkins_last_comment && jenkins_last_comment.body =~ /PASS/
 
     if jenkins_allows_merge
