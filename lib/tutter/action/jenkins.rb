@@ -41,14 +41,22 @@ class Jenkins
       return false
     end
 
-    jenkins_last_comment = @client.issue_comments(@project, pull_request_id).select{|c| c.attrs[:user].attrs[:login] == 'jenkins'}.last
-    jenkins_allows_merge = jenkins_last_comment && jenkins_last_comment.body =~ /PASS/
+    if pr.statuses.empty?
+      puts "no PR statuses found"
+      return false
+    end
 
-    if jenkins_allows_merge
+    allow_merge = false
+    pr_combined_status = client.statuses.combined_status(@project, last_commit.sha)
+    if pr_combined_status.state == "success"
+      allow_merge = true
+    end
+
+    if allow_merge
       puts "merging #{pull_request_id} #{@project}"
       @client.merge_pull_request(@project, pull_request_id, 'ok, shipping!')
     else
-      @client.add_comment(@project, pull_request_id, "Please make sure tests pass")
+      @client.add_comment(@project, pull_request_id, "Please make sure all checks pass")
     end
   end
 end

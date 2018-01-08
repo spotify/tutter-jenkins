@@ -4,7 +4,7 @@ This action let non collaborators review
 and merge code without having more then read access to the project.
 
 1. A pull request get submitted
-2. Jenkins runs the tests, comments "Test PASSed."
+2. Jenkins runs the tests and creates a status for the ref, indicating whether tests passed or not
 3. The pull request can be merged by commenting "merge, my change is covered by tests"
 
 ## Installation
